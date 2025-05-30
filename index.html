@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Segundo A - Colegio Santo Cristo</title>
+  <style>
+    canvas {
+      background: black;
+      display: block;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: darkblue;
+      font-family: Arial, sans-serif;
+    }
+    p.autor {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    #message {
+      text-align: center;
+      font-size: 36px;
+      color: green;
+      font-weight: bold;
+      display: none;
+    }
+    #timer {
+      text-align: center;
+      font-size: 24px;
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Segundo A - Colegio Santo Cristo</h1>
+  <canvas id="gameCanvas" width="800" height="800"></canvas>
+  <p class="autor">SANTINO PEREZ RUSSO</p>
+  <p id="timer">Tiempo: 0 segundos</p>
+  <p id="message">¡GANASTE!</p>
+  <audio id="chompSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const chompSound = document.getElementById('chompSound');
+    const message = document.getElementById('message');
+    const timerDisplay = document.getElementById('timer');
+    const tileSize = 40;
+
+    const map = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,0,1,1,0,0,0,0,0,1,1,1,0,1,0,1,0,1],
+      [1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
+      [1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+      [1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+      [1,0,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    const pacman = {
+      x: 1,
+      y: 1,
+      dx: 0,
+      dy: 0,
+    };
+
+    let timerStarted = false;
+    let startTime = 0;
+    let timerInterval;
+
+    function startTimer() {
+      if (!timerStarted) {
+        timerStarted = true;
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+          const seconds = Math.floor((Date.now() - startTime) / 1000);
+          timerDisplay.textContent = `Tiempo: ${seconds} segundos`;
+        }, 1000);
+      }
+    }
+
+    function drawMap() {
+      for (let row = 0; row < map.length; row++) {
+        for (let col = 0; col < map[row].length; col++) {
+          if (map[row][col] === 1) {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+          } else if (map[row][col] === 0) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(col * tileSize + tileSize/2, row * tileSize + tileSize/2, 5, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    function drawPacman() {
+      ctx.fillStyle = 'yellow';
+      ctx.beginPath();
+      ctx.arc(
+        pacman.x * tileSize + tileSize / 2,
+        pacman.y * tileSize + tileSize / 2,
+        tileSize / 2 - 2,
+        0.25 * Math.PI,
+        1.75 * Math.PI
+      );
+      ctx.lineTo(pacman.x * tileSize + tileSize / 2, pacman.y * tileSize + tileSize / 2);
+      ctx.fill();
+    }
+
+    function clear() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function movePacman() {
+      const newX = pacman.x + pacman.dx;
+      const newY = pacman.y + pacman.dy;
+      if (
+        newY >= 0 && newY < map.length &&
+        newX >= 0 && newX < map[0].length &&
+        map[newY][newX] !== 1
+      ) {
+        pacman.x = newX;
+        pacman.y = newY;
+        if (map[pacman.y][pacman.x] === 0) {
+          map[pacman.y][pacman.x] = 2;
+          chompSound.currentTime = 0;
+          chompSound.play();
+          startTimer();
+          checkWin();
+        }
+      }
+    }
+
+    function checkWin() {
+      for (let row of map) {
+        if (row.includes(0)) return;
+      }
+      message.style.display = 'block';
+      clearInterval(timerInterval);
+    }
+
+    function gameLoop() {
+      clear();
+      drawMap();
+      drawPacman();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowUp': pacman.dx = 0; pacman.dy = -1; break;
+        case 'ArrowDown': pacman.dx = 0; pacman.dy = 1; break;
+        case 'ArrowLeft': pacman.dx = -1; pacman.dy = 0; break;
+        case 'ArrowRight': pacman.dx = 1; pacman.dy = 0; break;
+      }
+      movePacman();
+    });
+
+    gameLoop();
+  </script>
+</body>
+</html>
