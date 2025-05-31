@@ -34,14 +34,16 @@
       justify-content: center;
       gap: 10px;
       margin-top: 20px;
+      flex-wrap: wrap;
     }
     .controls button {
-      padding: 10px 20px;
-      font-size: 18px;
+      padding: 30px 40px;
+      font-size: 32px;
       border: none;
       background-color: #333;
       color: white;
-      border-radius: 5px;
+      border-radius: 10px;
+      flex: 1 1 40%;
     }
     #timer {
       text-align: center;
@@ -73,7 +75,26 @@
     const timerDisplay = document.getElementById('timer');
     const tileSize = 40;
 
-    const map = [...]; // El mapa permanece igual
+    const map = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,0,1,1,0,0,0,0,0,1,1,1,0,1,0,1,0,1],
+      [1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
+      [1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+      [1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+      [1,0,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1],
+      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
 
     const pacman = { x: 1, y: 1 };
 
@@ -81,9 +102,33 @@
     let startTime = 0;
     let interval;
 
-    function drawMap() { /* sin cambios */ }
-    function drawPacman() { /* sin cambios */ }
-    function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function drawMap() {
+      for (let row = 0; row < map.length; row++) {
+        for (let col = 0; col < map[row].length; col++) {
+          if (map[row][col] === 1) {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+          } else if (map[row][col] === 0) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(col * tileSize + tileSize/2, row * tileSize + tileSize/2, 5, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    function drawPacman() {
+      ctx.fillStyle = 'yellow';
+      ctx.beginPath();
+      ctx.arc(pacman.x * tileSize + tileSize / 2, pacman.y * tileSize + tileSize / 2, tileSize / 2 - 2, 0.25 * Math.PI, 1.75 * Math.PI);
+      ctx.lineTo(pacman.x * tileSize + tileSize / 2, pacman.y * tileSize + tileSize / 2);
+      ctx.fill();
+    }
+
+    function clear() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     function eatDot(x, y) {
       if (map[y][x] === 0) {
@@ -118,11 +163,46 @@
       requestAnimationFrame(gameLoop);
     }
 
-    function setDirection(dx, dy) { /* sin cambios */ }
+    function setDirection(dx, dy) {
+      const newX = pacman.x + dx;
+      const newY = pacman.y + dy;
+      if (
+        newY >= 0 && newY < map.length &&
+        newX >= 0 && newX < map[0].length &&
+        map[newY][newX] !== 1
+      ) {
+        pacman.x = newX;
+        pacman.y = newY;
+        eatDot(pacman.x, pacman.y);
+      }
+    }
 
-    canvas.addEventListener('touchmove', (e) => { /* sin cambios */ });
+    canvas.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((touch.clientX - rect.left) / tileSize);
+      const y = Math.floor((touch.clientY - rect.top) / tileSize);
 
-    document.addEventListener('keydown', (e) => { /* sin cambios */ });
+      if (
+        y >= 0 && y < map.length &&
+        x >= 0 && x < map[0].length &&
+        map[y][x] !== 1 &&
+        (x !== pacman.x || y !== pacman.y)
+      ) {
+        pacman.x = x;
+        pacman.y = y;
+        eatDot(x, y);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowUp': setDirection(0, -1); break;
+        case 'ArrowDown': setDirection(0, 1); break;
+        case 'ArrowLeft': setDirection(-1, 0); break;
+        case 'ArrowRight': setDirection(1, 0); break;
+      }
+    });
 
     gameLoop();
   </script>
