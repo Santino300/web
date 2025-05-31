@@ -8,6 +8,7 @@
       background: black;
       display: block;
       margin: 0 auto;
+      touch-action: none;
     }
     h1 {
       text-align: center;
@@ -62,32 +63,31 @@
     const chompSound = document.getElementById('chompSound');
     const message = document.getElementById('message');
     const tileSize = 40;
+
     const map = [
       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,0,1],
+      [1,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,1],
+      [1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1],
+      [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,1],
+      [1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,1],
+      [1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1],
       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
-      [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
-      [1,0,1,0,1,1,0,0,0,0,0,1,1,1,0,1,0,1,0,1],
-      [1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
-      [1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
-      [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
-      [1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-      [1,0,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
-      [1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],
-      [1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1],
-      [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+      [1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,1],
+      [1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,1,0,1],
+      [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,1],
+      [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1],
       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     ];
 
     const pacman = {
       x: 1,
       y: 1,
-      dx: 0,
-      dy: 0,
     };
 
     let timerStarted = false;
@@ -128,30 +128,21 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    function movePacman() {
-      const newX = pacman.x + pacman.dx;
-      const newY = pacman.y + pacman.dy;
-      if (
-        newY >= 0 && newY < map.length &&
-        newX >= 0 && newX < map[0].length &&
-        map[newY][newX] !== 1
-      ) {
-        pacman.x = newX;
-        pacman.y = newY;
-        if (map[pacman.y][pacman.x] === 0) {
-          map[pacman.y][pacman.x] = 2;
-          chompSound.currentTime = 0;
-          chompSound.play();
-          if (!timerStarted) {
-            timerStarted = true;
-            startTime = Date.now();
-            interval = setInterval(() => {
-              const seconds = Math.floor((Date.now() - startTime) / 1000);
-              document.title = `Tiempo: ${seconds}s`;
-            }, 1000);
-          }
-          checkWin();
+    function eatDot(x, y) {
+      if (map[y][x] === 0) {
+        map[y][x] = 2;
+        chompSound.currentTime = 0;
+        chompSound.play();
+
+        if (!timerStarted) {
+          timerStarted = true;
+          startTime = Date.now();
+          interval = setInterval(() => {
+            const seconds = Math.floor((Date.now() - startTime) / 1000);
+            document.title = `Tiempo: ${seconds}s`;
+          }, 1000);
         }
+        checkWin();
       }
     }
 
@@ -171,41 +162,36 @@
     }
 
     function setDirection(dx, dy) {
-      pacman.dx = dx;
-      pacman.dy = dy;
-      movePacman();
+      const newX = pacman.x + dx;
+      const newY = pacman.y + dy;
+      if (newX >= 0 && newX < map[0].length && newY >= 0 && newY < map.length && map[newY][newX] !== 1) {
+        pacman.x = newX;
+        pacman.y = newY;
+        eatDot(newX, newY);
+      }
     }
 
-    document.addEventListener('keydown', (e) => {
-      switch (e.key) {
-        case 'ArrowUp': setDirection(0,-1); break;
-        case 'ArrowDown': setDirection(0,1); break;
-        case 'ArrowLeft': setDirection(-1,0); break;
-        case 'ArrowRight': setDirection(1,0); break;
+    canvas.addEventListener('touchmove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = Math.floor((touch.clientX - rect.left) / tileSize);
+      const y = Math.floor((touch.clientY - rect.top) / tileSize);
+
+      if (x !== pacman.x || y !== pacman.y) {
+        if (x >= 0 && x < map[0].length && y >= 0 && y < map.length && map[y][x] !== 1) {
+          pacman.x = x;
+          pacman.y = y;
+          eatDot(x, y);
+        }
       }
     });
 
-    // Soporte para deslizar en dispositivos táctiles
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    canvas.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    });
-
-    canvas.addEventListener('touchend', (e) => {
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - touchStartX;
-      const dy = touch.clientY - touchStartY;
-
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 20) setDirection(1, 0); // derecha
-        else if (dx < -20) setDirection(-1, 0); // izquierda
-      } else {
-        if (dy > 20) setDirection(0, 1); // abajo
-        else if (dy < -20) setDirection(0, -1); // arriba
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowUp': setDirection(0, -1); break;
+        case 'ArrowDown': setDirection(0, 1); break;
+        case 'ArrowLeft': setDirection(-1, 0); break;
+        case 'ArrowRight': setDirection(1, 0); break;
       }
     });
 
